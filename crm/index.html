@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f766e">
+    <title>CRM Dentistas RD &middot; Cibao</title>
+    <link rel="shortcut icon" href="../images/favicon.png" type="image/x-icon">
+    <link rel="stylesheet" href="crm.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar__brand">
+            <h1>CRM Dentistas RD</h1>
+            <span class="topbar__tagline">Cibao &middot; Moca &middot; Santiago &middot; provincias cercanas</span>
+        </div>
+        <div class="topbar__stats">
+            <span class="stat" id="statTotal">0 contactos</span>
+            <span class="stat stat--ok" id="statHechos">0 hechos</span>
+            <span class="stat stat--warn" id="statPendientes">0 pendientes</span>
+        </div>
+    </header>
+
+    <section class="toolbar">
+        <input
+            type="search"
+            id="search"
+            class="toolbar__search"
+            placeholder="Buscar por nombre, telefono, direccion, especialidad..."
+            autocomplete="off">
+        <select id="filterProvincia" class="toolbar__select"></select>
+        <select id="filterEstado" class="toolbar__select">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="contactado">Contactado</option>
+            <option value="agendado">Agendado</option>
+            <option value="no_responde">No responde</option>
+            <option value="descartado">Descartado</option>
+        </select>
+        <button id="btnExport" class="toolbar__btn" title="Exportar a CSV">CSV</button>
+        <button id="btnReset" class="toolbar__btn toolbar__btn--danger" title="Borrar mi historial">Reset</button>
+    </section>
+
+    <main id="grid" class="grid"></main>
+
+    <template id="cardTemplate">
+        <article class="card" data-id="">
+            <header class="card__head">
+                <h2 class="card__name"></h2>
+                <span class="card__estado"></span>
+            </header>
+            <p class="card__direccion"></p>
+            <p class="card__meta">
+                <span class="card__provincia"></span>
+                <span class="card__especialidad"></span>
+            </p>
+            <div class="card__phones"></div>
+            <div class="card__actions">
+                <select class="card__estadoSelect">
+                    <option value="pendiente">Pendiente</option>
+                    <option value="contactado">Contactado</option>
+                    <option value="agendado">Agendado</option>
+                    <option value="no_responde">No responde</option>
+                    <option value="descartado">Descartado</option>
+                </select>
+                <button class="card__notasBtn">Notas</button>
+            </div>
+            <textarea class="card__notas" placeholder="Notas de la llamada..." hidden></textarea>
+            <small class="card__fuente"></small>
+        </article>
+    </template>
+
+    <footer class="bottombar">
+        <small>
+            Datos publicos de directorios medicos dominicanos.
+            Tu progreso (estado, notas) se guarda solo en tu navegador.
+        </small>
+    </footer>
+
+    <script src="crm.js"></script>
+</body>
+</html>
