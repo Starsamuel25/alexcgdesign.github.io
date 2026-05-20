@@ -1,20 +1,33 @@
 // CRM Dentistas RD - logica cliente
-// El estado por contacto (estado + notas) se guarda en localStorage bajo "crm_dentistas_state_v1".
+// Estado por contacto (estado + notas) en localStorage bajo "crm_dentistas_state_v2".
+// v2: pipeline de ventas (prospecto -> cerrado_ganado/perdido) en vez de estados de llamada.
 
-const STORAGE_KEY = "crm_dentistas_state_v1";
-const ESTADOS = ["pendiente", "contactado", "agendado", "no_responde", "descartado"];
+const STORAGE_KEY = "crm_dentistas_state_v2";
+
+const ESTADOS = [
+    "prospecto",
+    "auditado",
+    "contactado",
+    "cita_agendada",
+    "propuesta_enviada",
+    "cerrado_ganado",
+    "cerrado_perdido",
+];
 const ESTADO_LABEL = {
-    pendiente:   "Pendiente",
-    contactado:  "Contactado",
-    agendado:    "Agendado",
-    no_responde: "No responde",
-    descartado:  "Descartado",
+    prospecto:         "Prospecto",
+    auditado:          "Auditado",
+    contactado:        "Contactado",
+    cita_agendada:     "Cita agendada",
+    propuesta_enviada: "Propuesta enviada",
+    cerrado_ganado:    "Cliente ganado",
+    cerrado_perdido:   "Cerrado perdido",
 };
+const SCORE_LABEL = { alto: "🔥 Alto", medio: "Medio", bajo: "Bajo" };
 
 const state = {
     dentistas: [],
-    progreso: {},      // { [id]: { estado, notas, updated } }
-    filtros: { texto: "", provincia: "", estado: "" },
+    progreso: {},
+    filtros: { texto: "", provincia: "", estado: "", score: "", web: "" },
 };
 
 const els = {
@@ -22,11 +35,14 @@ const els = {
     search: document.getElementById("search"),
     filterProvincia: document.getElementById("filterProvincia"),
     filterEstado: document.getElementById("filterEstado"),
+    filterScore: document.getElementById("filterScore"),
+    filterWeb: document.getElementById("filterWeb"),
     btnExport: document.getElementById("btnExport"),
     btnReset: document.getElementById("btnReset"),
     statTotal: document.getElementById("statTotal"),
-    statHechos: document.getElementById("statHechos"),
-    statPendientes: document.getElementById("statPendientes"),
+    statGanados: document.getElementById("statGanados"),
+    statActivos: document.getElementById("statActivos"),
+    statAlto: document.getElementById("statAlto"),
     template: document.getElementById("cardTemplate"),
 };
 
@@ -53,13 +69,13 @@ function saveProgress() {
 
 function getProgreso(id) {
     if (!state.progreso[id]) {
-        state.progreso[id] = { estado: "pendiente", notas: "", updated: null };
+        state.progreso[id] = { estado: "prospecto", notas: "", updated: null };
     }
     return state.progreso[id];
 }
 
 // ---------------------------------------------------------------------------
-// Carga del dataset
+// Dataset
 // ---------------------------------------------------------------------------
 async function loadDataset() {
     const res = await fetch("dentists.json", { cache: "no-cache" });
@@ -81,20 +97,51 @@ function normalize(text) {
 
 function applyFilters() {
     const q = normalize(state.filtros.texto.trim());
-    const provincia = state.filtros.provincia;
-    const estadoF = state.filtros.estado;
+    const { provincia, estado, score, web } = state.filtros;
     return state.dentistas.filter((d) => {
         if (provincia && d.provincia !== provincia) return false;
-        if (estadoF) {
+        if (score && d.lead_score !== score) return false;
+        if (web === "con_web" && !d.web) return false;
+        if (web === "sin_web" &&  d.web) return false;
+        if (web === "obsoleta" && !["wordpress_gratis", "basica"].includes(d.web_calidad)) return false;
+        if (estado) {
             const est = getProgreso(d.id).estado;
-            if (est !== estadoF) return false;
+            if (est !== estado) return false;
         }
         if (!q) return true;
         const haystack = normalize(
-            [d.nombre, d.telefono, d.telefono_alt, d.direccion, d.ciudad, d.provincia, d.especialidad].join(" ")
+            [d.nombre, d.telefono, d.telefono_alt, d.direccion, d.ciudad, d.provincia, d.especialidad, d.web].join(" ")
         );
         return haystack.includes(q);
     });
+}
+
+// ---------------------------------------------------------------------------
+// Helpers de links externos
+// ---------------------------------------------------------------------------
+function telLink(phone) {
+    const clean = phone.replace(/[^\d+]/g, "");
+    return "tel:+1" + clean.replace(/^1/, "");
+}
+function waLink(phone) {
+    const clean = phone.replace(/\D/g, "");
+    const n = clean.length === 11 && clean.startsWith("1") ? clean : "1" + clean;
+    return "https://wa.me/" + n;
+}
+function googleSearchLink(d) {
+    const q = encodeURIComponent(`"${d.nombre}" ${d.ciudad || d.provincia} dentista`);
+    return "https://www.google.com/search?q=" + q;
+}
+function googleMapsLink(d) {
+    const q = encodeURIComponent(`${d.nombre} ${d.ciudad || ""} ${d.provincia || ""} Republica Dominicana`);
+    return "https://www.google.com/maps/search/" + q;
+}
+function instagramSearchLink(d) {
+    const q = encodeURIComponent(d.nombre);
+    return "https://www.google.com/search?q=site%3Ainstagram.com+" + q;
+}
+function pageSpeedLink(url) {
+    return "https://pagespeed.web.dev/analysis?url=" + encodeURIComponent(url);
 }
 
 // ---------------------------------------------------------------------------
@@ -109,51 +156,82 @@ function renderProvincias() {
         provincias.map((p) => `<option value="${p}">${p}</option>`).join("");
 }
 
-function buildPhoneLink(phone, isAlt) {
+function renderPhoneRow(d, phone, isAlt) {
     if (!phone || phone === "verificar") {
-        return `<span class="phone-link phone-link--missing">Verificar telefono</span>`;
+        return `
+            <div class="phone-row phone-row--missing">
+                <span class="phone-row__label">Sin teléfono</span>
+                <a class="btn btn--mini" href="${googleSearchLink(d)}" target="_blank" rel="noopener">🔍 Buscar</a>
+                <a class="btn btn--mini" href="${googleMapsLink(d)}" target="_blank" rel="noopener">📍 Maps</a>
+                <a class="btn btn--mini" href="${instagramSearchLink(d)}" target="_blank" rel="noopener">📷 IG</a>
+            </div>`;
     }
-    const clean = phone.replace(/[^\d+]/g, "");
-    const tel = clean.startsWith("+") ? clean : `+1${clean.replace(/^1/, "")}`;
-    return `<a class="phone-link${isAlt ? " phone-link--alt" : ""}" href="tel:${tel}">${phone}</a>`;
+    return `
+        <div class="phone-row">
+            <a class="phone-link${isAlt ? " phone-link--alt" : ""}" href="${telLink(phone)}">📞 ${phone}</a>
+            <a class="btn btn--wa" href="${waLink(phone)}" target="_blank" rel="noopener" title="Abrir WhatsApp">WA</a>
+        </div>`;
 }
 
-function renderCard(dentista) {
-    const node = els.template.content.firstElementChild.cloneNode(true);
-    const progreso = getProgreso(dentista.id);
-
-    node.dataset.id = dentista.id;
-    node.dataset.estado = progreso.estado;
-
-    node.querySelector(".card__name").textContent = dentista.nombre;
-    node.querySelector(".card__direccion").textContent = dentista.direccion || "(sin direccion)";
-    node.querySelector(".card__provincia").textContent =
-        [dentista.ciudad, dentista.provincia].filter(Boolean).join(" · ") || "Sin provincia";
-    node.querySelector(".card__especialidad").textContent = dentista.especialidad || "";
-    node.querySelector(".card__estado").textContent = ESTADO_LABEL[progreso.estado];
-    node.querySelector(".card__fuente").textContent = dentista.fuente ? `Fuente: ${dentista.fuente}` : "";
-
-    const phones = node.querySelector(".card__phones");
-    phones.insertAdjacentHTML("beforeend", buildPhoneLink(dentista.telefono, false));
-    if (dentista.telefono_alt) {
-        phones.insertAdjacentHTML("beforeend", buildPhoneLink(dentista.telefono_alt, true));
+function renderWebRow(d) {
+    if (d.web) {
+        const obsoleta = ["wordpress_gratis", "basica"].includes(d.web_calidad);
+        const tag = d.web_calidad === "wordpress_gratis" ? "WordPress gratis — pitch fácil"
+                  : d.web_calidad === "basica"           ? "Web básica — rediseño"
+                  : d.web_calidad === "institucional"    ? "Institucional"
+                  : "Web moderna";
+        return `
+            <div class="web-row">
+                <a class="btn btn--web" href="${d.web}" target="_blank" rel="noopener">🌐 ${new URL(d.web).hostname}</a>
+                <a class="btn btn--audit" href="${pageSpeedLink(d.web)}" target="_blank" rel="noopener" title="Auditar con PageSpeed Insights">⚡ Auditar</a>
+                <span class="web-tag ${obsoleta ? "web-tag--opp" : ""}">${tag}</span>
+            </div>`;
     }
+    return `
+        <div class="web-row web-row--missing">
+            <span class="no-web">🚫 Sin web — oportunidad</span>
+            <a class="btn btn--mini" href="${googleSearchLink(d)}" target="_blank" rel="noopener">Verificar</a>
+        </div>`;
+}
+
+function renderCard(d) {
+    const node = els.template.content.firstElementChild.cloneNode(true);
+    const progreso = getProgreso(d.id);
+
+    node.dataset.id = d.id;
+    node.dataset.estado = progreso.estado;
+    node.dataset.score = d.lead_score;
+
+    node.querySelector(".card__name").textContent = d.nombre;
+    node.querySelector(".card__direccion").textContent = d.direccion || "(sin dirección)";
+    node.querySelector(".card__provincia").textContent =
+        [d.ciudad, d.provincia].filter(Boolean).join(" · ") || "Sin provincia";
+    node.querySelector(".card__especialidad").textContent = d.especialidad || "";
+    node.querySelector(".card__estado").textContent = ESTADO_LABEL[progreso.estado];
+    node.querySelector(".card__score").textContent = SCORE_LABEL[d.lead_score] || "";
+    node.querySelector(".card__fuente").textContent = d.fuente ? `Fuente: ${d.fuente}` : "";
+
+    const contacto = node.querySelector(".card__contacto");
+    contacto.insertAdjacentHTML("beforeend", renderPhoneRow(d, d.telefono, false));
+    if (d.telefono_alt) {
+        contacto.insertAdjacentHTML("beforeend", renderPhoneRow(d, d.telefono_alt, true));
+    }
+    contacto.insertAdjacentHTML("beforeend", renderWebRow(d));
 
     const estadoSelect = node.querySelector(".card__estadoSelect");
+    estadoSelect.innerHTML = ESTADOS.map(
+        (e) => `<option value="${e}">${ESTADO_LABEL[e]}</option>`
+    ).join("");
     estadoSelect.value = progreso.estado;
     estadoSelect.addEventListener("change", (e) => {
-        const nuevo = e.target.value;
-        const p = getProgreso(dentista.id);
-        p.estado = nuevo;
+        const p = getProgreso(d.id);
+        p.estado = e.target.value;
         p.updated = new Date().toISOString();
         saveProgress();
-        node.dataset.estado = nuevo;
-        node.querySelector(".card__estado").textContent = ESTADO_LABEL[nuevo];
+        node.dataset.estado = p.estado;
+        node.querySelector(".card__estado").textContent = ESTADO_LABEL[p.estado];
         updateStats();
-        // Si el filtro de estado esta activo y la nueva categoria no coincide, lo escondemos.
-        if (state.filtros.estado && state.filtros.estado !== nuevo) {
-            node.remove();
-        }
+        if (state.filtros.estado && state.filtros.estado !== p.estado) node.remove();
     });
 
     const notasArea = node.querySelector(".card__notas");
@@ -164,17 +242,16 @@ function renderCard(dentista) {
         notasBtn.textContent = "Notas ●";
     }
     notasBtn.addEventListener("click", () => {
-        const isOpen = !notasArea.hidden;
-        notasArea.hidden = isOpen;
-        notasBtn.setAttribute("aria-pressed", isOpen ? "false" : "true");
-        if (!isOpen) notasArea.focus();
+        const open = !notasArea.hidden;
+        notasArea.hidden = open;
+        notasBtn.setAttribute("aria-pressed", open ? "false" : "true");
+        if (!open) notasArea.focus();
     });
-
     let saveTimeout;
     notasArea.addEventListener("input", (e) => {
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
-            const p = getProgreso(dentista.id);
+            const p = getProgreso(d.id);
             p.notas = e.target.value;
             p.updated = new Date().toISOString();
             saveProgress();
@@ -189,8 +266,13 @@ function render() {
     const filtered = applyFilters();
     els.grid.innerHTML = "";
     if (!filtered.length) {
-        els.grid.innerHTML = '<div class="empty">No hay contactos que coincidan con los filtros.</div>';
+        els.grid.innerHTML = '<div class="empty">No hay prospectos que coincidan con los filtros.</div>';
     } else {
+        // Ordena por lead_score (alto primero) para que veas los mejores primero
+        filtered.sort((a, b) => {
+            const order = { alto: 0, medio: 1, bajo: 2 };
+            return (order[a.lead_score] ?? 9) - (order[b.lead_score] ?? 9);
+        });
         const frag = document.createDocumentFragment();
         filtered.forEach((d) => frag.appendChild(renderCard(d)));
         els.grid.appendChild(frag);
@@ -200,28 +282,39 @@ function render() {
 
 function updateStats() {
     const total = state.dentistas.length;
-    let hechos = 0, pendientes = 0;
+    let ganados = 0, activos = 0, alto = 0;
     state.dentistas.forEach((d) => {
         const est = getProgreso(d.id).estado;
-        if (est === "agendado" || est === "contactado") hechos++;
-        if (est === "pendiente") pendientes++;
+        if (est === "cerrado_ganado") ganados++;
+        if (["contactado", "cita_agendada", "propuesta_enviada", "auditado"].includes(est)) activos++;
+        if (d.lead_score === "alto" && est !== "cerrado_perdido" && est !== "cerrado_ganado") alto++;
     });
-    els.statTotal.textContent = `${total} contactos`;
-    els.statHechos.textContent = `${hechos} hechos`;
-    els.statPendientes.textContent = `${pendientes} pendientes`;
+    els.statTotal.textContent = `${total} prospectos`;
+    els.statGanados.textContent = `${ganados} ganados`;
+    els.statActivos.textContent = `${activos} en proceso`;
+    els.statAlto.textContent = `${alto} 🔥 alto`;
 }
 
 // ---------------------------------------------------------------------------
 // Export CSV
 // ---------------------------------------------------------------------------
 function exportCSV() {
-    const headers = ["id","nombre","telefono","telefono_alt","direccion","ciudad","provincia","especialidad","estado","notas","fuente"];
+    const headers = [
+        "id","nombre","telefono","telefono_alt","whatsapp",
+        "direccion","ciudad","provincia","especialidad",
+        "web","web_calidad","lead_score",
+        "estado","notas","fuente",
+    ];
     const rows = state.dentistas.map((d) => {
         const p = getProgreso(d.id);
+        const tel = d.telefono && d.telefono !== "verificar" ? d.telefono : "";
+        const wa  = tel ? waLink(tel) : "";
         return headers.map((h) => {
-            const val = h === "estado" ? ESTADO_LABEL[p.estado]
-                     : h === "notas"  ? (p.notas || "")
-                     : (d[h] || "");
+            const val =
+                h === "estado"   ? ESTADO_LABEL[p.estado] :
+                h === "notas"    ? (p.notas || "") :
+                h === "whatsapp" ? wa :
+                (d[h] || "");
             return `"${String(val).replace(/"/g, '""')}"`;
         }).join(",");
     });
@@ -241,22 +334,15 @@ function exportCSV() {
 // Eventos
 // ---------------------------------------------------------------------------
 function wireEvents() {
-    let searchTimeout;
+    let t;
     els.search.addEventListener("input", (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            state.filtros.texto = e.target.value;
-            render();
-        }, 150);
+        clearTimeout(t);
+        t = setTimeout(() => { state.filtros.texto = e.target.value; render(); }, 150);
     });
-    els.filterProvincia.addEventListener("change", (e) => {
-        state.filtros.provincia = e.target.value;
-        render();
-    });
-    els.filterEstado.addEventListener("change", (e) => {
-        state.filtros.estado = e.target.value;
-        render();
-    });
+    els.filterProvincia.addEventListener("change", (e) => { state.filtros.provincia = e.target.value; render(); });
+    els.filterEstado.addEventListener("change",    (e) => { state.filtros.estado    = e.target.value; render(); });
+    els.filterScore.addEventListener("change",     (e) => { state.filtros.score     = e.target.value; render(); });
+    els.filterWeb.addEventListener("change",       (e) => { state.filtros.web       = e.target.value; render(); });
     els.btnExport.addEventListener("click", exportCSV);
     els.btnReset.addEventListener("click", () => {
         if (confirm("Borrar todos los estados y notas guardados?")) {
