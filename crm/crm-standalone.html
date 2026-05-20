@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f766e">
+    <title>CRM Dentistas RD &middot; Cibao</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🦷%3C/text%3E%3C/svg%3E">
+    <style>
+:root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #0f766e;
+    --primary-dark: #0d5e58;
+    --accent: #2563eb;
+    --ok: #16a34a;
+    --warn: #f59e0b;
+    --danger: #dc2626;
+    --info: #0ea5e9;
+    --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 4px 12px rgba(15, 23, 42, .04);
+    --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.topbar {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #fff;
+    padding: 14px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--shadow);
+}
+
+.topbar h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.topbar__tagline {
+    display: block;
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 2px;
+}
+
+.topbar__stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.stat {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.stat--ok    { background: rgba(22, 163, 74, .85); }
+.stat--warn  { background: rgba(245, 158, 11, .85); }
+
+.toolbar {
+    background: var(--surface);
+    padding: 12px 18px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 62px;
+    z-index: 40;
+}
+
+.toolbar__search,
+.toolbar__select {
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    font: inherit;
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.toolbar__search:focus,
+.toolbar__select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, .15);
+}
+
+.toolbar__search {
+    flex: 1 1 320px;
+    min-width: 220px;
+}
+
+.toolbar__btn {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+}
+.toolbar__btn:hover { background: var(--primary-dark); }
+.toolbar__btn--danger {
+    background: #fff;
+    color: var(--danger);
+    border-color: var(--danger);
+}
+.toolbar__btn--danger:hover {
+    background: var(--danger);
+    color: #fff;
+}
+
+.grid {
+    padding: 18px;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 4px solid transparent;
+    transition: transform .12s, box-shadow .12s;
+}
+.card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(15,23,42,.08); }
+
+.card[data-estado="contactado"] { border-top-color: var(--info); }
+.card[data-estado="agendado"]   { border-top-color: var(--ok); }
+.card[data-estado="no_responde"]{ border-top-color: var(--warn); }
+.card[data-estado="descartado"] { border-top-color: var(--danger); opacity: 0.7; }
+
+.card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.card__name {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.25;
+    color: var(--text);
+}
+
+.card__estado {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.card[data-estado="contactado"]  .card__estado { background: rgba(14,165,233,.15); color: #0369a1; }
+.card[data-estado="agendado"]    .card__estado { background: rgba(22,163,74,.15);  color: #166534; }
+.card[data-estado="no_responde"] .card__estado { background: rgba(245,158,11,.18); color: #92400e; }
+.card[data-estado="descartado"]  .card__estado { background: rgba(220,38,38,.15);  color: #991b1b; }
+
+.card__direccion {
+    color: var(--muted);
+    margin: 0;
+    font-size: 13px;
+}
+
+.card__meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 0;
+    font-size: 12px;
+}
+
+.card__meta span {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.card__phones {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.phone-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--primary);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background .15s, transform .1s;
+}
+.phone-link:hover  { background: var(--primary-dark); }
+.phone-link:active { transform: scale(.98); }
+.phone-link::before {
+    content: "📞";
+    font-size: 16px;
+}
+.phone-link--alt {
+    background: #fff;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+.phone-link--alt:hover {
+    background: var(--primary);
+    color: #fff;
+}
+.phone-link--missing {
+    background: #fef3c7;
+    color: #92400e;
+    cursor: not-allowed;
+    pointer-events: none;
+    border: 1px dashed #f59e0b;
+}
+.phone-link--missing::before { content: "⚠️"; }
+
+.card__actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.card__estadoSelect {
+    flex: 1;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.card__notasBtn {
+    height: 38px;
+    padding: 0 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+}
+.card__notasBtn:hover { background: #f1f5f9; }
+.card__notasBtn[aria-pressed="true"] {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.card__notas {
+    width: 100%;
+    min-height: 70px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    resize: vertical;
+    margin-top: 4px;
+}
+.card__notas:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, .15);
+}
+
+.card__fuente {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+.bottombar {
+    text-align: center;
+    color: var(--muted);
+    padding: 20px 18px 30px;
+    font-size: 12px;
+}
+
+.empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 20px;
+    font-size: 15px;
+}
+
+@media (max-width: 600px) {
+    .topbar { padding: 12px 14px; }
+    .topbar h1 { font-size: 16px; }
+    .toolbar { padding: 10px 14px; top: 70px; }
+    .grid { padding: 14px; gap: 12px; }
+    .card { padding: 14px; }
+    .card__name { font-size: 15px; }
+}
+
+</style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar__brand">
+            <h1>CRM Dentistas RD</h1>
+            <span class="topbar__tagline">Cibao &middot; Moca &middot; Santiago &middot; provincias cercanas</span>
+        </div>
+        <div class="topbar__stats">
+            <span class="stat" id="statTotal">0 contactos</span>
+            <span class="stat stat--ok" id="statHechos">0 hechos</span>
+            <span class="stat stat--warn" id="statPendientes">0 pendientes</span>
+        </div>
+    </header>
+
+    <section class="toolbar">
+        <input
+            type="search"
+            id="search"
+            class="toolbar__search"
+            placeholder="Buscar por nombre, telefono, direccion, especialidad..."
+            autocomplete="off">
+        <select id="filterProvincia" class="toolbar__select"></select>
+        <select id="filterEstado" class="toolbar__select">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="contactado">Contactado</option>
+            <option value="agendado">Agendado</option>
+            <option value="no_responde">No responde</option>
+            <option value="descartado">Descartado</option>
+        </select>
+        <button id="btnExport" class="toolbar__btn" title="Exportar a CSV">CSV</button>
+        <button id="btnReset" class="toolbar__btn toolbar__btn--danger" title="Borrar mi historial">Reset</button>
+    </section>
+
+    <main id="grid" class="grid"></main>
+
+    <template id="cardTemplate">
+        <article class="card" data-id="">
+            <header class="card__head">
+                <h2 class="card__name"></h2>
+                <span class="card__estado"></span>
+            </header>
+            <p class="card__direccion"></p>
+            <p class="card__meta">
+                <span class="card__provincia"></span>
+                <span class="card__especialidad"></span>
+            </p>
+            <div class="card__phones"></div>
+            <div class="card__actions">
+                <select class="card__estadoSelect">
+                    <option value="pendiente">Pendiente</option>
+                    <option value="contactado">Contactado</option>
+                    <option value="agendado">Agendado</option>
+                    <option value="no_responde">No responde</option>
+                    <option value="descartado">Descartado</option>
+                </select>
+                <button class="card__notasBtn">Notas</button>
+            </div>
+            <textarea class="card__notas" placeholder="Notas de la llamada..." hidden></textarea>
+            <small class="card__fuente"></small>
+        </article>
+    </template>
+
+    <footer class="bottombar">
+        <small>
+            Datos publicos de directorios medicos dominicanos.
+            Tu progreso (estado, notas) se guarda solo en tu navegador.
+        </small>
+    </footer>
+
+    <script id="dentistsData" type="application/json">{
+  "generated": "2026-05-19",
+  "total": 100,
+  "fuentes": [
+    "directoriodentistas.do",
+    "paginasamarillas.com.do",
+    "infoguia.com.do",
+    "guiamedica.com.do",
+    "yelu.do",
+    "saludonline.com.do",
+    "1411.com.do",
+    "sitios oficiales de las clinicas"
+  ],
+  "nota": "Datos publicos recolectados de directorios medicos dominicanos. Telefonos marcados 'verificar' no aparecian explicitos en el snippet de la fuente — corrobora antes de llamar. Algunos sitios ofrecen WhatsApp tambien.",
+  "dentistas": [
+    {"id": 1, "nombre": "Clinica Odontologica Dr. Santiago Bencosme", "telefono": "809-578-6600", "telefono_alt": "", "direccion": "C. Independencia No.40, Moca (Zona Urbana)", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 2, "nombre": "Clinica Dental Dra. Lucia Bencosme", "telefono": "809-578-6914", "telefono_alt": "", "direccion": "Autop. Ramon Caceres, Plaza Sunrise, 1er Nivel, Modulo 103, Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Ortodoncia", "fuente": "saludonline.com.do"},
+    {"id": 3, "nombre": "Centro Odontologico Dr. Hugo D. Cruz", "telefono": "809-822-1860", "telefono_alt": "", "direccion": "Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 4, "nombre": "Clinicas Odontologicas Sonrisas", "telefono": "809-578-1930", "telefono_alt": "", "direccion": "Calle Jose Dolores Alfonseca, Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 5, "nombre": "Taveras Dental", "telefono": "809-578-2963", "telefono_alt": "", "direccion": "Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 6, "nombre": "Biodental (sucursal Moca)", "telefono": "809-578-5923", "telefono_alt": "", "direccion": "Calle Presidente Vazquez, Esq. Imbert, Plaza Dely, Local 1, Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 7, "nombre": "Clinica Dental Dra. Almonte", "telefono": "verificar", "telefono_alt": "", "direccion": "C. Antonio de la Maza No. 36, Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "paginasamarillas.com.do"},
+    {"id": 8, "nombre": "Clinica Dental Dra. Maritza Guzman", "telefono": "verificar", "telefono_alt": "", "direccion": "Av Imbert 76, Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "paginasamarillas.com.do"},
+    {"id": 9, "nombre": "Clinica Dental Dr. Tommy Guadalupe", "telefono": "verificar", "telefono_alt": "", "direccion": "Nuestra Senora Del Rosario 54, Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "paginasamarillas.com.do"},
+    {"id": 10, "nombre": "Dra. Raquel Espinal", "telefono": "verificar", "telefono_alt": "", "direccion": "Calle 16 de Agosto, Esquina Ramon Santos, 2do Nivel, Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 11, "nombre": "OdontoNorte Clinica Dental", "telefono": "verificar", "telefono_alt": "", "direccion": "Jose Ma. Michell #12, Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "odontonorterd.com"},
+    {"id": 12, "nombre": "Clinica Dental Dr. Frank Garcia", "telefono": "verificar", "telefono_alt": "", "direccion": "Gaspar Hernandez, Espaillat", "ciudad": "Gaspar Hernandez", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "guiamedica.com.do"},
+    {"id": 13, "nombre": "Clinica Dental Dr. Dickson Sanchez", "telefono": "verificar", "telefono_alt": "", "direccion": "Cayetano Germosen / Moca", "ciudad": "Cayetano Germosen", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "guiamedica.com.do"},
+    {"id": 14, "nombre": "Clinica Odontologica Sonrisa V", "telefono": "verificar", "telefono_alt": "", "direccion": "Moca", "ciudad": "Moca", "provincia": "Espaillat", "especialidad": "Odontologia general", "fuente": "saludonline.com.do"},
+
+    {"id": 15, "nombre": "Dentisalud", "telefono": "809-226-3494", "telefono_alt": "849-220-6500", "direccion": "Calle Sanchez No. 78, Centro Historico, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia integral", "fuente": "dentisalud.com.do"},
+    {"id": 16, "nombre": "Salud Bucal (Red Odontologica)", "telefono": "809-338-9988", "telefono_alt": "", "direccion": "Av. Bartolome Colon, 3er Piso, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Red odontologica", "fuente": "saludbucal.com.do"},
+    {"id": 17, "nombre": "IVODONTIX", "telefono": "809-971-8811", "telefono_alt": "809-806-4677", "direccion": "Gral. Eusebio Manzueta 21F, Santiago 51000", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontopediatria y estetica", "fuente": "ivodontix.com"},
+    {"id": 18, "nombre": "Dr. Santiago Pichardo", "telefono": "809-582-3934", "telefono_alt": "", "direccion": "Calle Restauracion 57, Plaza Corominas Suite 104, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia integral", "fuente": "drsantiagopichardo.com"},
+    {"id": 19, "nombre": "Dr. Hugo Quezada - Implantes Dentales", "telefono": "809-399-4743", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Implantes dentales", "fuente": "drhugoquezada.com"},
+    {"id": 20, "nombre": "Biodental Creando Sonrisa (Principal)", "telefono": "809-724-7478", "telefono_alt": "", "direccion": "Calle General Cabrera, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "biodental.com.do"},
+    {"id": 21, "nombre": "Biodental Creando Sonrisa (Plaza Madera)", "telefono": "809-734-5633", "telefono_alt": "", "direccion": "Plaza Madera, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "biodental.com.do"},
+    {"id": 22, "nombre": "Biodental Creando Sonrisa (3ra sucursal)", "telefono": "809-570-5000", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "biodental.com.do"},
+    {"id": 23, "nombre": "PRODENTIXA", "telefono": "809-582-7603", "telefono_alt": "", "direccion": "Avda. Rafael Vidal No. 100, Urb. Jardines del Este, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia integral", "fuente": "prodentixa.com"},
+    {"id": 24, "nombre": "BucalClinic Odontologia Especializada", "telefono": "809-336-2151", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia especializada", "fuente": "directoriodentistas.do"},
+    {"id": 25, "nombre": "Centro Dental Cibao SRL", "telefono": "849-937-5522", "telefono_alt": "", "direccion": "Tamboril, Santiago", "ciudad": "Tamboril", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "centrodentalcibao.com"},
+    {"id": 26, "nombre": "Dental Center-Dom", "telefono": "809-541-2840", "telefono_alt": "", "direccion": "Paraiso Haim Lopez Penha #32, Ensanche Paraiso, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 27, "nombre": "Dr. Oscar Morel - Centro de Odontologia", "telefono": "809-583-2288", "telefono_alt": "", "direccion": "CC La Trinitaria Mod. 408, Ave. Juan Pablo Duarte esq. Maimon, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Implantes, carillas, blanqueamiento", "fuente": "droscarmorel.com"},
+    {"id": 28, "nombre": "Richard Jimenez Ortho", "telefono": "809-582-1134", "telefono_alt": "809-581-1427", "direccion": "CC La Trinitaria, Calle JP Duarte esq C. Maimon, Modulo 410, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Ortodoncia y cirugia ortognatica", "fuente": "richardjimenezortodoncia.com"},
+    {"id": 29, "nombre": "Dra. Sarah Lora G - Ortodoncia Digital", "telefono": "809-582-9517", "telefono_alt": "", "direccion": "Santiago de los Caballeros", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Ortodoncia / Invisalign", "fuente": "instagram.com/loragortodoncia"},
+    {"id": 30, "nombre": "Centro Ortodoncista Dentomaxilar Santiago", "telefono": "809-241-4071", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Ortodoncia", "fuente": "guiamedica.com.do"},
+    {"id": 31, "nombre": "Centro Dental Especializado", "telefono": "809-580-1830", "telefono_alt": "", "direccion": "Calle Cuba 69 / Calle E. Leon Jimenes #4, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general y especializada", "fuente": "centrodentalespecializado.do"},
+    {"id": 32, "nombre": "Interdental Odontologia Especializada", "telefono": "809-724-0079", "telefono_alt": "", "direccion": "J M Cabral, Esq. C. 11, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Implantes, periodoncia, estetica", "fuente": "interdental.com.do"},
+    {"id": 33, "nombre": "Innodentist - Centro Odontologico", "telefono": "829-913-4804", "telefono_alt": "809-894-2660", "direccion": "Av. Bartolome Colon, Plaza Barcelona 2do nivel mod 204, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "innodentist.com"},
+    {"id": 34, "nombre": "INABIMA - Plan Odontologico Magisterial", "telefono": "809-686-6567", "telefono_alt": "", "direccion": "Av. Bartolome Colon, Plaza Coral, Locales 203 y 204, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Plan odontologico magisterial", "fuente": "inabima.gob.do"},
+    {"id": 35, "nombre": "Dent-Oral", "telefono": "809-226-5350", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "dentoral.com.do"},
+    {"id": 36, "nombre": "Clinica Dental Dra. Lourdes Sanabia", "telefono": "809-734-0114", "telefono_alt": "", "direccion": "Plaza Alpha, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "paginasamarillas.com.do"},
+    {"id": 37, "nombre": "Dr. Zoilo Nunez Gil - Cirugia Maxilofacial", "telefono": "829-947-2703", "telefono_alt": "809-757-0913", "direccion": "Hospital Metropolitano de Santiago (HOMS)", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Cirugia bucal y maxilofacial", "fuente": "sodocibumax.com.do"},
+    {"id": 38, "nombre": "Visodent - Odontologia Especializada", "telefono": "verificar", "telefono_alt": "", "direccion": "Plaza Vera Modulo 2B, Avenida 27 de Febrero, Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia especializada", "fuente": "facebook.com/visodentrd"},
+    {"id": 39, "nombre": "Dental Cibao Spa", "telefono": "verificar", "telefono_alt": "", "direccion": "Calle Ramon Matias Mella con Francisco del Rosario Sanchez, BIOPLAZA, 2do Nivel, La Trinitaria", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general y turismo dental", "fuente": "dentalcibao.com"},
+    {"id": 40, "nombre": "Centro Dental Dr. Edward Fernandez R", "telefono": "verificar", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia general", "fuente": "paginasamarillas.com.do"},
+    {"id": 41, "nombre": "Dentarium Centro Odontologico", "telefono": "verificar", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Centro odontologico", "fuente": "facebook.com/dentariumRD"},
+    {"id": 42, "nombre": "Odonto Center RD", "telefono": "verificar", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Centro odontologico", "fuente": "instagram.com/odontocenter_rd"},
+    {"id": 43, "nombre": "Clinica Dental Cestero (Dr. Juan Jose Cestero)", "telefono": "verificar", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Periodoncia e implantologia", "fuente": "clinicadentalcestero.com"},
+    {"id": 44, "nombre": "Centro Implantologico del Cibao", "telefono": "verificar", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Implantologia", "fuente": "centroimplantologicodelcibao.com"},
+    {"id": 45, "nombre": "Dentalogic - Clinica Odontologica Especializada", "telefono": "verificar", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Odontologia especializada", "fuente": "dentalogic.do"},
+    {"id": 46, "nombre": "Sonrisa Radiante (Centro Afiliado Santiago)", "telefono": "verificar", "telefono_alt": "", "direccion": "Santiago", "ciudad": "Santiago de los Caballeros", "provincia": "Santiago", "especialidad": "Red afiliada de clinicas", "fuente": "sonrisaradiante.com.do"},
+
+    {"id": 47, "nombre": "Clinica Dental Dra. Elba Caceres", "telefono": "809-242-1840", "telefono_alt": "", "direccion": "La Vega", "ciudad": "La Vega", "provincia": "La Vega", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 48, "nombre": "Clinica Dental De Moya", "telefono": "809-573-1564", "telefono_alt": "", "direccion": "C/ Sanchez No. 54, Concepcion de La Vega", "ciudad": "La Vega", "provincia": "La Vega", "especialidad": "Odontologia general", "fuente": "foursquare.com"},
+    {"id": 49, "nombre": "Clinica De Rehabilitacion Bucal Dr. Danny Fantasia", "telefono": "809-573-6006", "telefono_alt": "", "direccion": "La Vega", "ciudad": "La Vega", "provincia": "La Vega", "especialidad": "Rehabilitacion bucal", "fuente": "directoriodentistas.do"},
+    {"id": 50, "nombre": "Clinica Dental Angelita Lara", "telefono": "809-573-4254", "telefono_alt": "", "direccion": "La Vega", "ciudad": "La Vega", "provincia": "La Vega", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 51, "nombre": "Clinica Dental Dr. Ariyama", "telefono": "809-539-2355", "telefono_alt": "", "direccion": "Constanza, La Vega", "ciudad": "Constanza", "provincia": "La Vega", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 52, "nombre": "Odontologica Estetica Jarabacoa", "telefono": "809-574-7216", "telefono_alt": "", "direccion": "Jarabacoa, La Vega", "ciudad": "Jarabacoa", "provincia": "La Vega", "especialidad": "Odontologia estetica", "fuente": "directoriodentistas.do"},
+    {"id": 53, "nombre": "Clinica Dental Dr. Marcos A. Martinez", "telefono": "809-574-2921", "telefono_alt": "", "direccion": "Jarabacoa, La Vega", "ciudad": "Jarabacoa", "provincia": "La Vega", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 54, "nombre": "Odontologia Profesional Dr. Florentino", "telefono": "829-648-9844", "telefono_alt": "", "direccion": "Avenida La Confluencia 42, Jarabacoa, La Vega", "ciudad": "Jarabacoa", "provincia": "La Vega", "especialidad": "Implantes, protesis, estetica", "fuente": "dentalprofesionalrd.com"},
+    {"id": 55, "nombre": "Centro Dental e Implantologia Jarabacoa", "telefono": "verificar", "telefono_alt": "", "direccion": "Calle Duarte #33, Plaza Central 2do nivel, Local #3, Jarabacoa", "ciudad": "Jarabacoa", "provincia": "La Vega", "especialidad": "Implantologia", "fuente": "findglocal.com"},
+    {"id": 56, "nombre": "Clinica Odontologica Dra. Solanyi Polanco", "telefono": "verificar", "telefono_alt": "", "direccion": "La Vega", "ciudad": "La Vega", "provincia": "La Vega", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+
+    {"id": 57, "nombre": "Clinica Dental Sonrisa", "telefono": "809-244-4314", "telefono_alt": "", "direccion": "P Clisante 93, Puerto Plata", "ciudad": "Puerto Plata", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "yelu.do"},
+    {"id": 58, "nombre": "Clinica Dental Wilson Jerez", "telefono": "809-520-4939", "telefono_alt": "", "direccion": "Puerto Plata", "ciudad": "Puerto Plata", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 59, "nombre": "Consultorio Odontologico Dr. Diaz Meyreles", "telefono": "809-261-2054", "telefono_alt": "", "direccion": "Puerto Plata", "ciudad": "Puerto Plata", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 60, "nombre": "Clinica Dental Dra. Matilde Melo", "telefono": "809-586-5808", "telefono_alt": "", "direccion": "Puerto Plata", "ciudad": "Puerto Plata", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 61, "nombre": "Dental Center Cabarete", "telefono": "809-519-1863", "telefono_alt": "", "direccion": "Plaza El Patio, frente a Panaderia Dick, Cabarete", "ciudad": "Cabarete", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "vymaps.com"},
+    {"id": 62, "nombre": "Dental Clinic Cabarete", "telefono": "809-571-0390", "telefono_alt": "829-572-8526", "direccion": "Calle Cabarete Sabaneta, Cabarete, Sosua", "ciudad": "Cabarete", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 63, "nombre": "Centro Dental Dra. Nieves Papaterra", "telefono": "809-571-3323", "telefono_alt": "", "direccion": "Calle Sosua Cabarete, Cabarete, Sosua", "ciudad": "Sosua", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 64, "nombre": "CentroDental - Dr. Wendy Juma", "telefono": "809-571-2767", "telefono_alt": "", "direccion": "Sosua, Puerto Plata", "ciudad": "Sosua", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "nicepeoplenetworking.com"},
+    {"id": 65, "nombre": "Clinica Dental Dra. Claritza Sanchez", "telefono": "809-851-6601", "telefono_alt": "", "direccion": "Sosua, Puerto Plata", "ciudad": "Sosua", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "nicepeoplenetworking.com"},
+    {"id": 66, "nombre": "Dra. Rosa Maria Garcia Castillo", "telefono": "verificar", "telefono_alt": "", "direccion": "Puerto Plata", "ciudad": "Puerto Plata", "provincia": "Puerto Plata", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+
+    {"id": 67, "nombre": "Centro Odontologico La Union", "telefono": "809-588-5533", "telefono_alt": "809-244-5338", "direccion": "Calle Duarte 33 / Duarte 18, San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Odontologia general", "fuente": "negocios.do"},
+    {"id": 68, "nombre": "Clinica Dental Maribel Cruz", "telefono": "809-244-5338", "telefono_alt": "", "direccion": "San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Estetica dental", "fuente": "clinicamaribelcruz.com"},
+    {"id": 69, "nombre": "Odontologia Integral Reyes", "telefono": "809-244-1800", "telefono_alt": "", "direccion": "San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Odontologia integral", "fuente": "directoriodentistas.do"},
+    {"id": 70, "nombre": "Clinica Dental Dr. Porfirio Marte", "telefono": "809-588-3682", "telefono_alt": "", "direccion": "Calle Ramon Matias Mella, San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 71, "nombre": "Clinica Dental Dra. Heridania Santos", "telefono": "809-588-0753", "telefono_alt": "809-725-3319", "direccion": "Calle Duarte, San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 72, "nombre": "Biodentic", "telefono": "809-588-5546", "telefono_alt": "", "direccion": "Calle San Francisco, San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 73, "nombre": "Clinica Dental Dr. Santana", "telefono": "809-588-3644", "telefono_alt": "", "direccion": "Calle la Cruz, Puerto Rico, San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 74, "nombre": "Consultorio Doctor King Sing Lee", "telefono": "verificar", "telefono_alt": "", "direccion": "San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Odontologia general", "fuente": "infoguia.com.do"},
+    {"id": 75, "nombre": "Clinica Dental Dr. Juan B. Delgado", "telefono": "verificar", "telefono_alt": "", "direccion": "San Francisco de Macoris", "ciudad": "San Francisco de Macoris", "provincia": "Duarte", "especialidad": "Odontologia general", "fuente": "guiamedica.com.do"},
+
+    {"id": 76, "nombre": "Clinica Dental Dr. Jose Nicolas", "telefono": "809-525-4541", "telefono_alt": "", "direccion": "Bonao", "ciudad": "Bonao", "provincia": "Monsenor Nouel", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 77, "nombre": "Dentymed - Centro Odontologico y Especialidades", "telefono": "809-525-3030", "telefono_alt": "", "direccion": "Bonao", "ciudad": "Bonao", "provincia": "Monsenor Nouel", "especialidad": "Odontologia y especialidades", "fuente": "directoriodentistas.do"},
+    {"id": 78, "nombre": "Clinica Dental Dr. Rafael A. Santana Reinoso", "telefono": "809-610-2772", "telefono_alt": "", "direccion": "Calle 12 de Julio #158A, Bonao 42000", "ciudad": "Bonao", "provincia": "Monsenor Nouel", "especialidad": "Odontologia general", "fuente": "soamaps.com"},
+    {"id": 79, "nombre": "Instituto de Especialidades Medicas Monsenor Nouel (IEMMN)", "telefono": "809-296-2002", "telefono_alt": "", "direccion": "Av. Aniana Vargas 4, Bonao", "ciudad": "Bonao", "provincia": "Monsenor Nouel", "especialidad": "Centro medico con servicio dental", "fuente": "guiamedica.com.do"},
+    {"id": 80, "nombre": "Centro Medico Primed Bonao (CEMEP)", "telefono": "809-525-3811", "telefono_alt": "", "direccion": "C/ Duarte No.427, Bonao", "ciudad": "Bonao", "provincia": "Monsenor Nouel", "especialidad": "Centro medico con servicio dental", "fuente": "vymaps.com"},
+    {"id": 81, "nombre": "Clinica Dental Dr. Estarlyn Rodriguez", "telefono": "verificar", "telefono_alt": "", "direccion": "Bonao, Monsenor Nouel", "ciudad": "Bonao", "provincia": "Monsenor Nouel", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+
+    {"id": 82, "nombre": "Consultorio Maxilofacial Dr. Jose Mariano Alejo", "telefono": "809-585-2264", "telefono_alt": "809-585-2390", "direccion": "Centro Medico Regional Guadalupe, Cotui", "ciudad": "Cotui", "provincia": "Sanchez Ramirez", "especialidad": "Cirugia maxilofacial", "fuente": "guiamedica.com.do"},
+    {"id": 83, "nombre": "Consultorio Dental Dra. Pena", "telefono": "809-585-2395", "telefono_alt": "", "direccion": "Cotui", "ciudad": "Cotui", "provincia": "Sanchez Ramirez", "especialidad": "Odontologia general", "fuente": "guiamedica.com.do"},
+    {"id": 84, "nombre": "Centro Medico Nunez Hernandez (servicio dental)", "telefono": "verificar", "telefono_alt": "", "direccion": "Cotui, Sanchez Ramirez", "ciudad": "Cotui", "provincia": "Sanchez Ramirez", "especialidad": "Centro medico con servicio dental", "fuente": "guiamedica.com.do"},
+
+    {"id": 85, "nombre": "Clinica Montesino Esperanza", "telefono": "809-585-8396", "telefono_alt": "", "direccion": "Av. Maria Trinidad Sanchez No.25, Esperanza", "ciudad": "Esperanza", "provincia": "Valverde", "especialidad": "Centro medico con servicio dental", "fuente": "guiamedica.com.do"},
+    {"id": 86, "nombre": "Centro de Especialidades Odontologicas (CEO)", "telefono": "809-572-7409", "telefono_alt": "", "direccion": "Gregorio Aracena #82, Santa Cruz de Mao", "ciudad": "Mao", "provincia": "Valverde", "especialidad": "Especialidades odontologicas", "fuente": "medicinaesteticabadajoz.es"},
+    {"id": 87, "nombre": "Mera Dental", "telefono": "809-572-6301", "telefono_alt": "", "direccion": "Santa Cruz de Mao", "ciudad": "Mao", "provincia": "Valverde", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 88, "nombre": "Clinica Dental Dra. Sugeiry Morel", "telefono": "verificar", "telefono_alt": "", "direccion": "Plaza la Altagracia 2, Esperanza, Valverde", "ciudad": "Esperanza", "provincia": "Valverde", "especialidad": "Odontologia general", "fuente": "facebook.com/lakallemao"},
+
+    {"id": 89, "nombre": "Drs. Valerio Ren Clinica Dental", "telefono": "verificar", "telefono_alt": "", "direccion": "Tenares, Hermanas Mirabal", "ciudad": "Tenares", "provincia": "Hermanas Mirabal", "especialidad": "Odontologia general", "fuente": "paginasamarillas.com.do"},
+    {"id": 90, "nombre": "Centro Odontologico Tenares", "telefono": "verificar", "telefono_alt": "", "direccion": "Tenares, Hermanas Mirabal", "ciudad": "Tenares", "provincia": "Hermanas Mirabal", "especialidad": "Centro odontologico", "fuente": "pladent.com.do"},
+    {"id": 91, "nombre": "Clinica VH Dental", "telefono": "verificar", "telefono_alt": "", "direccion": "Salcedo, Hermanas Mirabal", "ciudad": "Salcedo", "provincia": "Hermanas Mirabal", "especialidad": "Odontologia general", "fuente": "pladent.com.do"},
+
+    {"id": 92, "nombre": "Clinica Dental Dra. Rosalba Hilario Rosa", "telefono": "809-584-1095", "telefono_alt": "", "direccion": "Av. Maria Trinidad Sanchez No. 104, frente a Esc. Eliseo Grullon, Nagua", "ciudad": "Nagua", "provincia": "Maria Trinidad Sanchez", "especialidad": "Odontologia general", "fuente": "clinicadentalrosalbahilario.wordpress.com"},
+    {"id": 93, "nombre": "Nagua Dental", "telefono": "verificar", "telefono_alt": "", "direccion": "Nagua, Maria Trinidad Sanchez", "ciudad": "Nagua", "provincia": "Maria Trinidad Sanchez", "especialidad": "Odontologia general", "fuente": "naguadental.com"},
+    {"id": 94, "nombre": "Consultorio Dental Ricardo", "telefono": "verificar", "telefono_alt": "", "direccion": "Nagua, Maria Trinidad Sanchez", "ciudad": "Nagua", "provincia": "Maria Trinidad Sanchez", "especialidad": "Odontologia general", "fuente": "guiamedica.com.do"},
+    {"id": 95, "nombre": "Vasquez & Vasquez Centro Odontologico", "telefono": "verificar", "telefono_alt": "", "direccion": "Nagua, Maria Trinidad Sanchez", "ciudad": "Nagua", "provincia": "Maria Trinidad Sanchez", "especialidad": "Rehabilitacion oral e implantes", "fuente": "facebook.com"},
+    {"id": 96, "nombre": "Centro Dental Dr. Rene Rapozo", "telefono": "verificar", "telefono_alt": "", "direccion": "Cabrera, Maria Trinidad Sanchez", "ciudad": "Cabrera", "provincia": "Maria Trinidad Sanchez", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+    {"id": 97, "nombre": "Clinica Dental Dra. Elizabeth Smith", "telefono": "verificar", "telefono_alt": "", "direccion": "Calle Altagracia #14, Nagua", "ciudad": "Nagua", "provincia": "Maria Trinidad Sanchez", "especialidad": "Odontologia general", "fuente": "directoriodentistas.do"},
+
+    {"id": 98, "nombre": "Dental Mirabal (centro afiliado Sonrisa Radiante)", "telefono": "verificar", "telefono_alt": "", "direccion": "Salcedo, Hermanas Mirabal", "ciudad": "Salcedo", "provincia": "Hermanas Mirabal", "especialidad": "Odontologia general", "fuente": "sonrisaradiante.com.do"},
+    {"id": 99, "nombre": "Pladent (Red de Odontologos del Interior)", "telefono": "verificar", "telefono_alt": "", "direccion": "Red nacional con miembros en el Cibao", "ciudad": "varios", "provincia": "Multi-provincial", "especialidad": "Red de odontologos", "fuente": "pladent.com.do"},
+    {"id": 100, "nombre": "Salud Bucal Sucursal Cibao (Red Odontologica)", "telefono": "809-549-7982", "telefono_alt": "", "direccion": "Red odontologica nacional", "ciudad": "Cibao", "provincia": "Multi-provincial", "especialidad": "Red odontologica", "fuente": "saludbucal.com.do"}
+  ]
+}
+</script>
+<script>window.__DENTISTS_DATA__ = JSON.parse(document.getElementById("dentistsData").textContent);</script>
+<script>
+// CRM Dentistas RD - logica cliente
+// El estado por contacto (estado + notas) se guarda en localStorage bajo "crm_dentistas_state_v1".
+
+const STORAGE_KEY = "crm_dentistas_state_v1";
+const ESTADOS = ["pendiente", "contactado", "agendado", "no_responde", "descartado"];
+const ESTADO_LABEL = {
+    pendiente:   "Pendiente",
+    contactado:  "Contactado",
+    agendado:    "Agendado",
+    no_responde: "No responde",
+    descartado:  "Descartado",
+};
+
+const state = {
+    dentistas: [],
+    progreso: {},      // { [id]: { estado, notas, updated } }
+    filtros: { texto: "", provincia: "", estado: "" },
+};
+
+const els = {
+    grid: document.getElementById("grid"),
+    search: document.getElementById("search"),
+    filterProvincia: document.getElementById("filterProvincia"),
+    filterEstado: document.getElementById("filterEstado"),
+    btnExport: document.getElementById("btnExport"),
+    btnReset: document.getElementById("btnReset"),
+    statTotal: document.getElementById("statTotal"),
+    statHechos: document.getElementById("statHechos"),
+    statPendientes: document.getElementById("statPendientes"),
+    template: document.getElementById("cardTemplate"),
+};
+
+// ---------------------------------------------------------------------------
+// Persistencia
+// ---------------------------------------------------------------------------
+function loadProgress() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+        console.warn("No se pudo leer el progreso:", err);
+        return {};
+    }
+}
+
+function saveProgress() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progreso));
+    } catch (err) {
+        console.warn("No se pudo guardar el progreso:", err);
+    }
+}
+
+function getProgreso(id) {
+    if (!state.progreso[id]) {
+        state.progreso[id] = { estado: "pendiente", notas: "", updated: null };
+    }
+    return state.progreso[id];
+}
+
+// ---------------------------------------------------------------------------
+// Carga del dataset
+// ---------------------------------------------------------------------------
+async function loadDataset() {
+    state.dentistas = window.__DENTISTS_DATA__.dentistas || [];
+}
+
+// ---------------------------------------------------------------------------
+// Filtros
+// ---------------------------------------------------------------------------
+function normalize(text) {
+    return (text || "")
+        .toString()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "");
+}
+
+function applyFilters() {
+    const q = normalize(state.filtros.texto.trim());
+    const provincia = state.filtros.provincia;
+    const estadoF = state.filtros.estado;
+    return state.dentistas.filter((d) => {
+        if (provincia && d.provincia !== provincia) return false;
+        if (estadoF) {
+            const est = getProgreso(d.id).estado;
+            if (est !== estadoF) return false;
+        }
+        if (!q) return true;
+        const haystack = normalize(
+            [d.nombre, d.telefono, d.telefono_alt, d.direccion, d.ciudad, d.provincia, d.especialidad].join(" ")
+        );
+        return haystack.includes(q);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+function renderProvincias() {
+    const provincias = Array.from(
+        new Set(state.dentistas.map((d) => d.provincia).filter(Boolean))
+    ).sort();
+    els.filterProvincia.innerHTML =
+        '<option value="">Todas las provincias</option>' +
+        provincias.map((p) => `<option value="${p}">${p}</option>`).join("");
+}
+
+function buildPhoneLink(phone, isAlt) {
+    if (!phone || phone === "verificar") {
+        return `<span class="phone-link phone-link--missing">Verificar telefono</span>`;
+    }
+    const clean = phone.replace(/[^\d+]/g, "");
+    const tel = clean.startsWith("+") ? clean : `+1${clean.replace(/^1/, "")}`;
+    return `<a class="phone-link${isAlt ? " phone-link--alt" : ""}" href="tel:${tel}">${phone}</a>`;
+}
+
+function renderCard(dentista) {
+    const node = els.template.content.firstElementChild.cloneNode(true);
+    const progreso = getProgreso(dentista.id);
+
+    node.dataset.id = dentista.id;
+    node.dataset.estado = progreso.estado;
+
+    node.querySelector(".card__name").textContent = dentista.nombre;
+    node.querySelector(".card__direccion").textContent = dentista.direccion || "(sin direccion)";
+    node.querySelector(".card__provincia").textContent =
+        [dentista.ciudad, dentista.provincia].filter(Boolean).join(" · ") || "Sin provincia";
+    node.querySelector(".card__especialidad").textContent = dentista.especialidad || "";
+    node.querySelector(".card__estado").textContent = ESTADO_LABEL[progreso.estado];
+    node.querySelector(".card__fuente").textContent = dentista.fuente ? `Fuente: ${dentista.fuente}` : "";
+
+    const phones = node.querySelector(".card__phones");
+    phones.insertAdjacentHTML("beforeend", buildPhoneLink(dentista.telefono, false));
+    if (dentista.telefono_alt) {
+        phones.insertAdjacentHTML("beforeend", buildPhoneLink(dentista.telefono_alt, true));
+    }
+
+    const estadoSelect = node.querySelector(".card__estadoSelect");
+    estadoSelect.value = progreso.estado;
+    estadoSelect.addEventListener("change", (e) => {
+        const nuevo = e.target.value;
+        const p = getProgreso(dentista.id);
+        p.estado = nuevo;
+        p.updated = new Date().toISOString();
+        saveProgress();
+        node.dataset.estado = nuevo;
+        node.querySelector(".card__estado").textContent = ESTADO_LABEL[nuevo];
+        updateStats();
+        // Si el filtro de estado esta activo y la nueva categoria no coincide, lo escondemos.
+        if (state.filtros.estado && state.filtros.estado !== nuevo) {
+            node.remove();
+        }
+    });
+
+    const notasArea = node.querySelector(".card__notas");
+    notasArea.value = progreso.notas || "";
+    const notasBtn = node.querySelector(".card__notasBtn");
+    if (progreso.notas) {
+        notasBtn.setAttribute("aria-pressed", "true");
+        notasBtn.textContent = "Notas ●";
+    }
+    notasBtn.addEventListener("click", () => {
+        const isOpen = !notasArea.hidden;
+        notasArea.hidden = isOpen;
+        notasBtn.setAttribute("aria-pressed", isOpen ? "false" : "true");
+        if (!isOpen) notasArea.focus();
+    });
+
+    let saveTimeout;
+    notasArea.addEventListener("input", (e) => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            const p = getProgreso(dentista.id);
+            p.notas = e.target.value;
+            p.updated = new Date().toISOString();
+            saveProgress();
+            notasBtn.textContent = p.notas ? "Notas ●" : "Notas";
+        }, 300);
+    });
+
+    return node;
+}
+
+function render() {
+    const filtered = applyFilters();
+    els.grid.innerHTML = "";
+    if (!filtered.length) {
+        els.grid.innerHTML = '<div class="empty">No hay contactos que coincidan con los filtros.</div>';
+    } else {
+        const frag = document.createDocumentFragment();
+        filtered.forEach((d) => frag.appendChild(renderCard(d)));
+        els.grid.appendChild(frag);
+    }
+    updateStats();
+}
+
+function updateStats() {
+    const total = state.dentistas.length;
+    let hechos = 0, pendientes = 0;
+    state.dentistas.forEach((d) => {
+        const est = getProgreso(d.id).estado;
+        if (est === "agendado" || est === "contactado") hechos++;
+        if (est === "pendiente") pendientes++;
+    });
+    els.statTotal.textContent = `${total} contactos`;
+    els.statHechos.textContent = `${hechos} hechos`;
+    els.statPendientes.textContent = `${pendientes} pendientes`;
+}
+
+// ---------------------------------------------------------------------------
+// Export CSV
+// ---------------------------------------------------------------------------
+function exportCSV() {
+    const headers = ["id","nombre","telefono","telefono_alt","direccion","ciudad","provincia","especialidad","estado","notas","fuente"];
+    const rows = state.dentistas.map((d) => {
+        const p = getProgreso(d.id);
+        return headers.map((h) => {
+            const val = h === "estado" ? ESTADO_LABEL[p.estado]
+                     : h === "notas"  ? (p.notas || "")
+                     : (d[h] || "");
+            return `"${String(val).replace(/"/g, '""')}"`;
+        }).join(",");
+    });
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `crm-dentistas-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Eventos
+// ---------------------------------------------------------------------------
+function wireEvents() {
+    let searchTimeout;
+    els.search.addEventListener("input", (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            state.filtros.texto = e.target.value;
+            render();
+        }, 150);
+    });
+    els.filterProvincia.addEventListener("change", (e) => {
+        state.filtros.provincia = e.target.value;
+        render();
+    });
+    els.filterEstado.addEventListener("change", (e) => {
+        state.filtros.estado = e.target.value;
+        render();
+    });
+    els.btnExport.addEventListener("click", exportCSV);
+    els.btnReset.addEventListener("click", () => {
+        if (confirm("Borrar todos los estados y notas guardados?")) {
+            state.progreso = {};
+            localStorage.removeItem(STORAGE_KEY);
+            render();
+        }
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+(async function init() {
+    try {
+        state.progreso = loadProgress();
+        await loadDataset();
+        renderProvincias();
+        wireEvents();
+        render();
+    } catch (err) {
+        console.error(err);
+        els.grid.innerHTML = `<div class="empty">Error cargando datos: ${err.message}</div>`;
+    }
+})();
+
+</script>
+</body>
+</html>
