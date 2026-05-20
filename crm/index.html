@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f766e">
+    <title>CRM Dentistas RD &middot; Pipeline de ventas</title>
+    <link rel="shortcut icon" href="../images/favicon.png" type="image/x-icon">
+    <link rel="stylesheet" href="crm.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar__brand">
+            <h1>CRM Dentistas RD</h1>
+            <span class="topbar__tagline">Prospección · Web design para clínicas del Cibao</span>
+        </div>
+        <div class="topbar__stats">
+            <span class="stat" id="statTotal">0 prospectos</span>
+            <span class="stat stat--ok" id="statGanados">0 ganados</span>
+            <span class="stat stat--info" id="statActivos">0 en proceso</span>
+            <span class="stat stat--hot" id="statAlto">0 🔥 alto</span>
+        </div>
+    </header>
+
+    <section class="toolbar">
+        <input
+            type="search"
+            id="search"
+            class="toolbar__search"
+            placeholder="Buscar por nombre, teléfono, dirección, web..."
+            autocomplete="off">
+        <select id="filterProvincia" class="toolbar__select"></select>
+        <select id="filterEstado" class="toolbar__select">
+            <option value="">Todos los estados</option>
+            <option value="prospecto">Prospecto</option>
+            <option value="auditado">Auditado</option>
+            <option value="contactado">Contactado</option>
+            <option value="cita_agendada">Cita agendada</option>
+            <option value="propuesta_enviada">Propuesta enviada</option>
+            <option value="cerrado_ganado">Cliente ganado</option>
+            <option value="cerrado_perdido">Cerrado perdido</option>
+        </select>
+        <select id="filterScore" class="toolbar__select">
+            <option value="">Todo lead score</option>
+            <option value="alto">🔥 Alto</option>
+            <option value="medio">Medio</option>
+            <option value="bajo">Bajo</option>
+        </select>
+        <select id="filterWeb" class="toolbar__select">
+            <option value="">Cualquier web</option>
+            <option value="sin_web">🚫 Sin web</option>
+            <option value="con_web">🌐 Con web</option>
+            <option value="obsoleta">⚠️ Web obsoleta</option>
+        </select>
+        <button id="btnExport" class="toolbar__btn">CSV</button>
+        <button id="btnReset" class="toolbar__btn toolbar__btn--danger">Reset</button>
+    </section>
+
+    <main id="grid" class="grid"></main>
+
+    <template id="cardTemplate">
+        <article class="card" data-id="" data-estado="" data-score="">
+            <header class="card__head">
+                <div class="card__head-left">
+                    <h2 class="card__name"></h2>
+                    <span class="card__score"></span>
+                </div>
+                <span class="card__estado"></span>
+            </header>
+            <p class="card__direccion"></p>
+            <p class="card__meta">
+                <span class="card__provincia"></span>
+                <span class="card__especialidad"></span>
+            </p>
+            <div class="card__contacto"></div>
+            <div class="card__actions">
+                <select class="card__estadoSelect"></select>
+                <button class="card__notasBtn">Notas</button>
+            </div>
+            <textarea class="card__notas" placeholder="Notas: con quién hablé, qué dijo, próximo paso..." hidden></textarea>
+            <small class="card__fuente"></small>
+        </article>
+    </template>
+
+    <footer class="bottombar">
+        <small>
+            Pipeline: <b>Prospecto</b> → <b>Auditado</b> (PageSpeed enviado) → <b>Contactado</b> → <b>Cita</b> → <b>Propuesta</b> → <b>Ganado/Perdido</b>.
+            Tu progreso se guarda solo en tu navegador.
+        </small>
+    </footer>
+
+    <script src="crm.js"></script>
+</body>
+</html>
